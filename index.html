@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f2027">
+  <meta name="description" content="Portrait Album Toolkit">
+  <title>3D Book Flip Animation</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lovers+Quarrel&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-image: url('./assets/bg.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+    }
+
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .book {
+      perspective: 200vw;
+      transition: opacity 0.4s 0.2s;
+      position: relative;
+      width: 90vh; /* Maintain 9:8 ratio relative to viewport height */
+      height: 80vh;
+      max-width: calc(100vw - 40px);
+      max-height: calc(88.89vw - 40px); /* 8/9 of width */
+    }
+
+    .pages {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      /* box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); */
+    }
+
+    .page {
+      position: absolute;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      transform-origin: left;
+      transition: transform 1.2s ease-in-out;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+      background: #faf8f6 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.05"><path d="M0,0 L100,0 L100,100 Z" fill="%23000000"/><path d="M0,0 L0,100 L100,100 Z" fill="%23000000"/></svg>');
+      background-size: 40px 40px;
+      overflow: hidden;
+    }
+
+    .page:nth-child(odd) {
+      transform-origin: left;
+      right: 0;
+    }
+
+    .page:nth-child(odd):hover {
+      transform: rotateY(-12deg);
+    }
+
+    .page:nth-child(even) {
+      transform-origin: right;
+      left: 0;
+      transform: rotateY(180deg);
+    }
+
+    .page.flipped:nth-child(odd) {
+      transform: rotateY(-180deg);
+      box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .page.flipped:nth-child(even) {
+      transform: rotateY(0deg);
+      box-shadow: 5px 0 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .page-image {
+      position: absolute;
+      width: calc(100% - 20px);
+      height: calc(100% - 20px);
+      object-fit: cover;
+      top: 10px;
+      left: 10px;
+      border-radius: 4px;
+    }
+
+    /* First two pages and last page don't have margins */
+    .page:nth-child(1) .page-image,
+    .page:nth-child(2) .page-image,
+    .page:nth-child(16) .page-image {
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+    }
+
+    .page-number {
+      position: absolute;
+      bottom: 0px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Poppins', sans-serif;
+      font-size: 8px;
+      color: grey;
+      display: none;
+
+    }
+
+    /* Show page numbers only from page 3 onwards */
+    .page:nth-child(n+3):not(:last-child) .page-number {
+      display: block;
+    }
+
+    .center-heading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Lovers Quarrel', cursive;
+      color: gold;
+      font-size: 5em;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .developer-text {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-family: 'Lovers Quarrel', cursive;
+      color: gold;
+      font-size: 12px;
+      z-index: 10;
+    }
+
+    /* Logo in top-left corner */
+    .logo {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, #ff7e5f, #feb47b);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s;
+      user-select: none;
+    }
+
+    .logo:hover {
+      transform: scale(1.1);
+    }
+
+    /* Rotate button */
+    .rotate-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      z-index: 1000;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .rotate-btn:hover {
+      transform: scale(1.1);
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .rotate-icon {
+      width: 30px;
+      height: 30px;
+      fill: white;
+    }
+
+    /* Dialog box */
+    .dialog-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+
+    .dialog-box {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .dialog-title {
+      font-size: 24px;
+      margin-bottom: 15px;
+      color: #333;
+    }
+
+    .dialog-message {
+      font-size: 16px;
+      margin-bottom: 25px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .dialog-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .dialog-btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .install-btn {
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      color: white;
+    }
+
+    .cancel-btn {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .dialog-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .install-btn:hover {
+      background: linear-gradient(to right, #3a9cf5, #00d9e6);
+    }
+
+    .cancel-btn:hover {
+      background: #e0e0e0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+
+      .body {
+        background-image: url('./assets/bg.jpg');
+        background-size: cover;
+      }
+
+      .book {
+        width: calc(100vw - 40px);
+        height: calc(88.89vw - 40px); /* 8/9 of width */
+      }
+      
+      .logo {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+      
+      .rotate-btn {
+        width: 50px;
+        height: 50px;
+      }
+      
+      .rotate-icon {
+        width: 25px;
+        height: 25px;
+      }
+      
+      .page-number {
+        font-size: 8px;
+      }
+    }
+
+    @media (max-height: 600px) {
+      .book {
+        height: calc(100vh - 100px);
+        width: calc(112.5vh - 112.5px); /* 9/8 of height */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo for PWA installation -->
+    <div class="logo" id="logo" title="Double-click to install">B</div>
+    
+    <!-- Book container -->
+    <div class="book">
+      <div id="pages" class="pages">
+        <!-- Pages with images -->
+        <div class="page">
+          <img src="./assets/frame.png" class="page-image" alt="Open me" style="object-fit: fill;">
+          <div class="center-heading">Vikash <br> & <br> Nathya</div>
+          <div class="page-number"></div>
+        </div>
+        <div class="page">
+          <img src="./assets/back-frame.png" class="page-image" alt="Hello">
+          <div class="page-number"></div>
+        </div>
+        <div class="page">
+          <img src="./assets/img1.jpg" class="page-image" alt="Page 1">
+          <div class="page-number">1</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img2.jpg" class="page-image" alt="Page 2">
+          <div class="page-number">2</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img3.jpg" class="page-image" alt="Page 3">
+          <div class="page-number">3</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img8.jpg" class="page-image" alt="Page 4">
+          <div class="page-number">4</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img5.jpg" class="page-image" alt="Page 5">
+          <div class="page-number">5</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img6.png" class="page-image" alt="Page 6">
+          <div class="page-number">6</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img7.png" class="page-image" alt="Page 7">
+          <div class="page-number">7</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img8.jpg" class="page-image" alt="Page 8">
+          <div class="page-number">8</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img9.png" class="page-image" alt="Page 9">
+          <div class="page-number">9</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img10.jpg" class="page-image" alt="Page 10">
+          <div class="page-number">10</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img11.jpg" class="page-image" alt="Page 11">
+          <div class="page-number">11</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img2.jpg" class="page-image" alt="Page 12">
+          <div class="page-number">12</div>
+        </div>
+        <div class="page">
+          <img src="./assets/img6.png" class="page-image" alt="Page 13">
+          <div class="page-number">13</div>
+        </div>
+        <div class="page">
+          <img src="./assets/back-frame.png" class="page-image" alt="The End">
+          <div class="center-heading">Journey Will Continue...</div>
+          <div class="developer-text">- Developed by Brahma Invitations</div>
+          <div class="page-number"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Rotate button -->
+    <div class="rotate-btn" id="rotateBtn" title="Rotate Book">
+      <svg class="rotate-icon" viewBox="0 0 24 24">
+        <path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+      </svg>
+    </div>
+    
+    <!-- Installation Dialog -->
+    <div class="dialog-overlay" id="dialogOverlay">
+      <div class="dialog-box">
+        <h2 class="dialog-title">Install Book Album</h2>
+        <p class="dialog-message">Do you want to install the Album on your device?</p>
+        <div class="dialog-buttons">
+          <button class="dialog-btn install-btn" id="installBtn">Install</button>
+          <button class="dialog-btn cancel-btn" id="cancelBtn">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Set up page flipping functionality
+    const pages = document.querySelectorAll('.page');
+    
+    // Set z-index for proper stacking
+    for (let i = 0; i < pages.length; i++) {
+      if (i % 2 === 0) {
+        pages[i].style.zIndex = pages.length - i;
+      }
+    }
+
+    // Add click event for page flipping
+    pages.forEach((page, index) => {
+      page.pageNum = index + 1;
+      page.addEventListener('click', function() {
+        if (this.pageNum % 2 === 0) {
+          this.classList.remove('flipped');
+          this.previousElementSibling.classList.remove('flipped');
+        } else {
+          this.classList.add('flipped');
+          this.nextElementSibling.classList.add('flipped');
+        }
+      });
+    });
+
+    // Book rotation functionality
+    const rotateBtn = document.getElementById('rotateBtn');
+    const book = document.querySelector('.book');
+    let rotationAngle = 0;
+    
+    rotateBtn.addEventListener('click', function() {
+      rotationAngle -= 90; // Rotate anti-clockwise
+      book.style.transition = 'transform 0.8s ease';
+      book.style.transform = `rotate(${rotationAngle}deg)`;
+      
+      // Reset transition after animation completes
+      setTimeout(() => {
+        book.style.transition = '';
+      }, 800);
+    });
+
+    // PWA Installation functionality
+    const logo = document.getElementById('logo');
+    const dialogOverlay = document.getElementById('dialogOverlay');
+    const installBtn = document.getElementById('installBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    
+    let deferredPrompt;
+    
+    // Show install dialog on logo double-click
+    logo.addEventListener('dblclick', function() {
+      dialogOverlay.style.display = 'flex';
+    });
+    
+    // Handle install button click
+    installBtn.addEventListener('click', function() {
+      if (deferredPrompt) {
+        // Show the install prompt
+        deferredPrompt.prompt();
+        
+        // Wait for the user to respond to the prompt
+        deferredPrompt.userChoice.then((choiceResult) => {
+          if (choiceResult.outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+          } else {
+            console.log('User dismissed the install prompt');
+          }
+          deferredPrompt = null;
+        });
+      } else {
+        // If deferredPrompt isn't available, show instructions
+        alert('To install this app:\n1. Click the menu button (⋮) in your browser\n2. Select "Install app" or "Add to Home Screen"');
+      }
+      
+      // Close dialog
+      dialogOverlay.style.display = 'none';
+    });
+    
+    // Handle cancel button click
+    cancelBtn.addEventListener('click', function() {
+      dialogOverlay.style.display = 'none';
+    });
+    
+    // Close dialog when clicking outside
+    dialogOverlay.addEventListener('click', function(e) {
+      if (e.target === dialogOverlay) {
+        dialogOverlay.style.display = 'none';
+      }
+    });
+    
+    // Listen for beforeinstallprompt event
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later
+      deferredPrompt = e;
+      
+      // Update UI to notify the user they can install the PWA
+      logo.title = "Double-click to install (Available)";
+      logo.style.background = "linear-gradient(135deg, #4facfe, #00f2fe)";
+    });
+    
+    // Listen for app installed event
+    window.addEventListener('appinstalled', () => {
+      // Hide the install button or show a message
+      logo.title = "App Installed!";
+      logo.style.background = "linear-gradient(135deg, #7bed9f, #2ed573)";
+      deferredPrompt = null;
+    });
+    
+    // Service Worker Registration for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        // Register service worker
+        navigator.serviceWorker.register('sw.js').then(registration => {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }).catch(err => {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+    
+    // Create a simple service worker inline
+    const serviceWorkerCode = `
+      self.addEventListener('install', event => {
+        console.log('Service Worker installing.');
+      });
+      
+      self.addEventListener('activate', event => {
+        console.log('Service Worker activating.');
+      });
+      
+      self.addEventListener('fetch', event => {
+        // For now, just pass through network requests
+      });
+    `;
+    
+    // Create a blob URL for the service worker
+    const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
+    const swURL = URL.createObjectURL(blob);
+    
+    // Register the service worker from the blob URL
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register(swURL).then(function(registration) {
+          console.log('ServiceWorker registration successful with scope: ', registration.scope);
+        }, function(err) {
+          console.log('ServiceWorker registration failed: ', err);
+        });
+      });
+    }
+    
+    // Create a manifest file for PWA
+    const manifest = {
+      "name": "3D Book Album",
+      "short_name": "BookAlbum",
+      "description": "A 3D Book Flip Animation with Image Gallery",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#0f2027",
+      "theme_color": "#0f2027",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    };
+    
+    // Create a link element for the manifest
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+    document.head.appendChild(manifestLink);
+  </script>
+</body>
+</html>
