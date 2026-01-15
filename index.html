@@ -6,9 +6,24 @@
   <meta name="theme-color" content="#0f2027">
   <meta name="description" content="Portrait Album Toolkit">
   <title>3D Book Flip Animation</title>
+  
+  <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
+  
+  <!-- iOS Icons -->
+  <link rel="apple-touch-icon" href="./assets/frame.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Book Album">
+  
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#0f2027">
+  
+  <!-- Icons for PWA -->
+  <link rel="icon" href="./assets/frame.png" type="image/png">
+  
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Lovers+Quarrel&display=swap" rel="stylesheet">
+  
   <style>
     *,
     *::before,
@@ -40,13 +55,14 @@
     }
 
     .book {
-      perspective: 200vw;
+      perspective: 200vmin;
       transition: opacity 0.4s 0.2s;
-      position: relative;
-      width: 90vh; /* Maintain 9:8 ratio relative to viewport height */
-      height: 80vh;
-      max-width: calc(100vw - 40px);
-      max-height: calc(88.89vw - 40px); /* 8/9 of width */
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60vmin;
+      height: calc(60vmin * 8 / 9);
     }
 
     .pages {
@@ -56,7 +72,6 @@
       transform-style: preserve-3d;
       backface-visibility: hidden;
       border-radius: 8px;
-      /* box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3); */
     }
 
     .page {
@@ -110,10 +125,10 @@
       border-radius: 4px;
     }
 
-    /* First two pages and last page don't have margins */
+    /* Remove margins for first, second, and last page images */
     .page:nth-child(1) .page-image,
     .page:nth-child(2) .page-image,
-    .page:nth-child(16) .page-image {
+    .page:last-child .page-image {
       width: 100%;
       height: 100%;
       top: 0;
@@ -129,7 +144,6 @@
       font-size: 8px;
       color: grey;
       display: none;
-
     }
 
     /* Show page numbers only from page 3 onwards */
@@ -144,7 +158,7 @@
       transform: translate(-50%, -50%);
       font-family: 'Lovers Quarrel', cursive;
       color: gold;
-      font-size: 5em;
+      font-size: 4vmax;
       text-align: center;
       z-index: 10;
     }
@@ -216,50 +230,54 @@
       fill: white;
     }
 
-    /* Dialog box */
-    .dialog-overlay {
+    /* PWA Install Dialog */
+    .pwa-dialog {
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      display: none;
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
       justify-content: center;
       align-items: center;
-      z-index: 2000;
     }
 
-    .dialog-box {
-      background: white;
-      border-radius: 12px;
+    .pwa-dialog-content {
+      background: linear-gradient(135deg, rgba(20, 20, 20, 0.95), rgba(40, 40, 40, 0.95));
+      border: 2px solid #ffd700;
+      border-radius: 15px;
       padding: 30px;
       width: 90%;
       max-width: 400px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
       text-align: center;
+      box-shadow: 0 15px 40px rgba(255, 215, 0, 0.3);
+      animation: dialogAppear 0.5s ease-out;
     }
 
-    .dialog-title {
-      font-size: 24px;
+    .pwa-dialog-content h3 {
+      color: #ffd700;
+      font-family: 'Poppins', sans-serif;
       margin-bottom: 15px;
-      color: #333;
+      font-size: 24px;
     }
 
-    .dialog-message {
-      font-size: 16px;
-      margin-bottom: 25px;
-      color: #555;
+    .pwa-dialog-content p {
+      color: white;
+      font-family: 'Poppins', sans-serif;
+      margin-bottom: 10px;
       line-height: 1.5;
     }
 
-    .dialog-buttons {
+    .pwa-dialog-buttons {
       display: flex;
       justify-content: center;
       gap: 15px;
+      margin-top: 25px;
     }
 
-    .dialog-btn {
+    .pwa-dialog-btn {
       padding: 12px 30px;
       border: none;
       border-radius: 8px;
@@ -267,6 +285,7 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
+      font-family: 'Poppins', sans-serif;
     }
 
     .install-btn {
@@ -279,7 +298,7 @@
       color: #333;
     }
 
-    .dialog-btn:hover {
+    .pwa-dialog-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
     }
@@ -292,44 +311,49 @@
       background: #e0e0e0;
     }
 
+    @keyframes dialogAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
     /* Responsive adjustments */
     @media (max-width: 768px) {
-
-      .body {
+      body {
         background-image: url('./assets/bg.jpg');
         background-size: cover;
       }
 
-      .book {
-        width: calc(100vw - 40px);
-        height: calc(88.89vw - 40px); /* 8/9 of width */
-      }
-      
       .logo {
         width: 40px;
         height: 40px;
         font-size: 18px;
       }
-      
+
       .rotate-btn {
         width: 50px;
         height: 50px;
       }
-      
+
       .rotate-icon {
         width: 25px;
         height: 25px;
       }
-      
+
       .page-number {
         font-size: 8px;
       }
-    }
-
-    @media (max-height: 600px) {
+      
+      /* Ensure book stays centered in mobile view */
       .book {
-        height: calc(100vh - 100px);
-        width: calc(112.5vh - 112.5px); /* 9/8 of height */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
       }
     }
   </style>
@@ -337,7 +361,7 @@
 <body>
   <div class="container">
     <!-- Logo for PWA installation -->
-    <div class="logo" id="logo" title="Double-click to install">B</div>
+    <div class="logo" id="installLogo" title="Double-click to install">B</div>
     
     <!-- Book container -->
     <div class="book">
@@ -420,14 +444,15 @@
       </svg>
     </div>
     
-    <!-- Installation Dialog -->
-    <div class="dialog-overlay" id="dialogOverlay">
-      <div class="dialog-box">
-        <h2 class="dialog-title">Install Book Album</h2>
-        <p class="dialog-message">Do you want to install the Album on your device?</p>
-        <div class="dialog-buttons">
-          <button class="dialog-btn install-btn" id="installBtn">Install</button>
-          <button class="dialog-btn cancel-btn" id="cancelBtn">Cancel</button>
+    <!-- PWA Install Dialog -->
+    <div class="pwa-dialog" id="pwaDialog">
+      <div class="pwa-dialog-content">
+        <h3>Install Book Album</h3>
+        <p>Do you want to install the <strong>Book Album</strong> app on your device?</p>
+        <p>This will allow you to access the album offline and get a better experience.</p>
+        <div class="pwa-dialog-buttons">
+          <button class="pwa-dialog-btn install-btn" id="installButton">Install</button>
+          <button class="pwa-dialog-btn cancel-btn" id="cancelButton">Cancel</button>
         </div>
       </div>
     </div>
@@ -466,7 +491,7 @@
     rotateBtn.addEventListener('click', function() {
       rotationAngle -= 90; // Rotate anti-clockwise
       book.style.transition = 'transform 0.8s ease';
-      book.style.transform = `rotate(${rotationAngle}deg)`;
+      book.style.transform = `translate(-50%, -50%) rotate(${rotationAngle}deg)`;
       
       // Reset transition after animation completes
       setTimeout(() => {
@@ -475,141 +500,203 @@
     });
 
     // PWA Installation functionality
-    const logo = document.getElementById('logo');
-    const dialogOverlay = document.getElementById('dialogOverlay');
-    const installBtn = document.getElementById('installBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
+    const installLogo = document.getElementById('installLogo');
+    const pwaDialog = document.getElementById('pwaDialog');
+    const installButton = document.getElementById('installButton');
+    const cancelButton = document.getElementById('cancelButton');
     
     let deferredPrompt;
-    
-    // Show install dialog on logo double-click
-    logo.addEventListener('dblclick', function() {
-      dialogOverlay.style.display = 'flex';
-    });
-    
-    // Handle install button click
-    installBtn.addEventListener('click', function() {
-      if (deferredPrompt) {
-        // Show the install prompt
-        deferredPrompt.prompt();
-        
-        // Wait for the user to respond to the prompt
-        deferredPrompt.userChoice.then((choiceResult) => {
-          if (choiceResult.outcome === 'accepted') {
-            console.log('User accepted the install prompt');
-          } else {
-            console.log('User dismissed the install prompt');
-          }
-          deferredPrompt = null;
+    let clickCount = 0;
+    let clickTimer;
+
+    // Manifest content
+    const manifest = {
+        "name": "Book Album",
+        "short_name": "BookAlbum",
+        "description": "A 3D Book Flip Animation with Image Gallery",
+        "start_url": "./",
+        "display": "standalone",
+        "background_color": "#0f2027",
+        "theme_color": "#0f2027",
+        "orientation": "portrait",
+        "icons": [
+            {
+                "src": "./assets/frame.png",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable"
+            },
+            {
+                "src": "./assets/frame.png",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable"
+            }
+        ],
+        "categories": ["entertainment", "lifestyle"],
+        "prefer_related_applications": false
+    };
+
+    // Create manifest dynamically
+    function createManifest() {
+        const manifestElement = document.querySelector('link[rel="manifest"]');
+        if (manifestElement) {
+            const blob = new Blob([JSON.stringify(manifest, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            manifestElement.href = url;
+        }
+    }
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            // Create service worker inline
+            const swContent = `
+                const CACHE_NAME = 'book-album-v1';
+                const urlsToCache = [
+                    './',
+                    './assets/bg.png',
+                    './assets/bg.jpg',
+                    './assets/frame.png',
+                    './assets/back-frame.png',
+                    './assets/img1.jpg',
+                    './assets/img2.jpg',
+                    './assets/img3.jpg',
+                    './assets/img5.jpg',
+                    './assets/img6.png',
+                    './assets/img7.png',
+                    './assets/img8.jpg',
+                    './assets/img9.png',
+                    './assets/img10.jpg',
+                    './assets/img11.jpg'
+                ];
+
+                self.addEventListener('install', event => {
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                return cache.addAll(urlsToCache);
+                            })
+                    );
+                });
+
+                self.addEventListener('fetch', event => {
+                    event.respondWith(
+                        caches.match(event.request)
+                            .then(response => {
+                                if (response) {
+                                    return response;
+                                }
+                                return fetch(event.request);
+                            })
+                    );
+                });
+
+                self.addEventListener('activate', event => {
+                    const cacheWhitelist = [CACHE_NAME];
+                    event.waitUntil(
+                        caches.keys().then(cacheNames => {
+                            return Promise.all(
+                                cacheNames.map(cacheName => {
+                                    if (cacheWhitelist.indexOf(cacheName) === -1) {
+                                        return caches.delete(cacheName);
+                                    }
+                                })
+                            );
+                        })
+                    );
+                });
+            `;
+
+            // Create service worker blob and register it
+            const blob = new Blob([swContent], {type: 'application/javascript'});
+            const swBlobUrl = URL.createObjectURL(blob);
+
+            navigator.serviceWorker.register(swBlobUrl)
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
         });
-      } else {
-        // If deferredPrompt isn't available, show instructions
-        alert('To install this app:\n1. Click the menu button (⋮) in your browser\n2. Select "Install app" or "Add to Home Screen"');
-      }
-      
-      // Close dialog
-      dialogOverlay.style.display = 'none';
-    });
-    
-    // Handle cancel button click
-    cancelBtn.addEventListener('click', function() {
-      dialogOverlay.style.display = 'none';
-    });
-    
-    // Close dialog when clicking outside
-    dialogOverlay.addEventListener('click', function(e) {
-      if (e.target === dialogOverlay) {
-        dialogOverlay.style.display = 'none';
-      }
-    });
-    
-    // Listen for beforeinstallprompt event
+    }
+
+    // PWA Installation Logic
     window.addEventListener('beforeinstallprompt', (e) => {
-      // Prevent the mini-infobar from appearing on mobile
-      e.preventDefault();
-      // Stash the event so it can be triggered later
-      deferredPrompt = e;
-      
-      // Update UI to notify the user they can install the PWA
-      logo.title = "Double-click to install (Available)";
-      logo.style.background = "linear-gradient(135deg, #4facfe, #00f2fe)";
+        e.preventDefault();
+        deferredPrompt = e;
+        installLogo.title = "Double-click to install (Available)";
+        installLogo.style.background = "linear-gradient(135deg, #4facfe, #00f2fe)";
     });
-    
+
     // Listen for app installed event
     window.addEventListener('appinstalled', () => {
-      // Hide the install button or show a message
-      logo.title = "App Installed!";
-      logo.style.background = "linear-gradient(135deg, #7bed9f, #2ed573)";
-      deferredPrompt = null;
+        installLogo.title = "App Installed!";
+        installLogo.style.background = "linear-gradient(135deg, #7bed9f, #2ed573)";
+        deferredPrompt = null;
     });
-    
-    // Service Worker Registration for PWA
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        // Register service worker
-        navigator.serviceWorker.register('sw.js').then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      });
-    }
-    
-    // Create a simple service worker inline
-    const serviceWorkerCode = `
-      self.addEventListener('install', event => {
-        console.log('Service Worker installing.');
-      });
-      
-      self.addEventListener('activate', event => {
-        console.log('Service Worker activating.');
-      });
-      
-      self.addEventListener('fetch', event => {
-        // For now, just pass through network requests
-      });
-    `;
-    
-    // Create a blob URL for the service worker
-    const blob = new Blob([serviceWorkerCode], { type: 'application/javascript' });
-    const swURL = URL.createObjectURL(blob);
-    
-    // Register the service worker from the blob URL
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register(swURL).then(function(registration) {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }, function(err) {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      });
-    }
-    
 
-    
-    // Create a manifest file for PWA
-    const manifest = {
-      "name": "3D Book Album",
-      "short_name": "BookAlbum",
-      "description": "A 3D Book Flip Animation with Image Gallery",
-      "start_url": ".",
-      "display": "standalone",
-      "background_color": "#0f2027",
-      "theme_color": "#0f2027",
-      "icons": [
-        {
-          "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>",
-          "sizes": "any",
-          "type": "image/svg+xml"
+    // Install dialog functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        createManifest();
+        
+        // Double click on logo to show install dialog
+        installLogo.addEventListener('click', function() {
+            clickCount++;
+            
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 300);
+            } else if (clickCount === 2) {
+                clearTimeout(clickTimer);
+                showInstallDialog();
+                clickCount = 0;
+            }
+        });
+
+        // Show install dialog
+        function showInstallDialog() {
+            pwaDialog.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         }
-      ]
-    };
-    
-    // Create a link element for the manifest
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
-    document.head.appendChild(manifestLink);
+
+        // Hide install dialog
+        function hideInstallDialog() {
+            pwaDialog.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Install button click
+        installButton.addEventListener('click', async () => {
+            hideInstallDialog();
+            
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                    alert('Book Album app is being installed on your device!');
+                }
+                deferredPrompt = null;
+            } else {
+                // Fallback for browsers that don't support beforeinstallprompt
+                alert('To install this app, look for the "Add to Home Screen" option in your browser menu.');
+            }
+        });
+
+        // Cancel button click
+        cancelButton.addEventListener('click', hideInstallDialog);
+
+        // Close dialog when clicking outside
+        pwaDialog.addEventListener('click', (e) => {
+            if (e.target === pwaDialog) {
+                hideInstallDialog();
+            }
+        });
+    });
   </script>
 </body>
 </html>
